@@ -8,7 +8,6 @@ from time import sleep
 from typing import Tuple, TypeVar, Type, Iterable, ClassVar
 import random
 
-
 # maximum and minimum values for our heuristic scores (usually represents an end of game condition)
 MAX_HEURISTIC_SCORE = 2000000000
 MIN_HEURISTIC_SCORE = -2000000000
@@ -326,8 +325,12 @@ class Game:
         if unit is None or unit.player != self.next_player:
             return False
         # TODO : DIAGONAL DIRECTION SHOULD NOT WORK
-        unit = self.get(coords.dst)
-        return (unit is None)
+        unit2 = self.get(coords.dst)
+        valid_coord_list = coords.src.iter_adjacent()
+        for coord in valid_coord_list:
+            if coords.dst == coord:
+                return True
+        return False
 
     def perform_move(self, coords: CoordPair) -> Tuple[bool, str]:
         """Validate and perform a move expressed as a CoordPair."""
@@ -342,13 +345,13 @@ class Game:
 
         if coords.src == coords.dst:
             # Perform self-destruct
-
-            check_around = src_unit.iter_range(1)
-
+            check_around = coords.src.iter_range(1)
             for coord in check_around:
                 unit = self.get(coord)
                 if unit is not None:
-                    unit.mod_health(coord, -2)
+                    self.mod_health(coord, -2)
+                    if not unit.is_alive():
+                        self.set(coord, None)
 
             self.mod_health(coords.src, -9)
             self.set(coords.src, None)
@@ -370,12 +373,11 @@ class Game:
                     self.set(coords.src, None)
             else:
                 # Perform Repair
-                # TODO : C: dT9 dF8 aP7 aF9 aV9 in this situation, aF9 -> aP7 wrong invalid move
                 repair = src_unit.repair_amount(dst_unit)
                 if repair is 0:
+                    print("Invalid move: This unit can not heal the targeted unit.")
                     return False, "Invalid move: This unit can not heal the targeted unit."
                 dst_unit.mod_health(repair)
-
         else:
             # Regular move
             self.set(coords.dst, src_unit)
