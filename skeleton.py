@@ -32,13 +32,11 @@ class Player(Enum):
         else:
             return Player.Attacker
 
-
 class GameType(Enum):
     AttackerVsDefender = 0
     AttackerVsComp = 1
     CompVsDefender = 2
     CompVsComp = 3
-
 
 ##############################################################################################################
 
@@ -99,7 +97,6 @@ class Unit:
         if target.health + amount > 9:
             return 9 - target.health
         return amount
-
 
 ##############################################################################################################
 
@@ -162,7 +159,6 @@ class Coord:
         else:
             return None
 
-
 ##############################################################################################################
 
 @dataclass(slots=True)
@@ -215,7 +211,6 @@ class CoordPair:
         else:
             return None
 
-
 ##############################################################################################################
 
 @dataclass(slots=True)
@@ -231,7 +226,6 @@ class Options:
     randomize_moves: bool = True
     broker: str | None = None
 
-
 ##############################################################################################################
 
 @dataclass(slots=True)
@@ -239,7 +233,6 @@ class Stats:
     """Representation of the global game statistics."""
     evaluations_per_depth: dict[int, int] = field(default_factory=dict)
     total_seconds: float = 0.0
-
 
 ##############################################################################################################
 
@@ -584,10 +577,11 @@ class Game:
             print(f"Broker error: {error}")
         return None
 
-    def trace_game_session(game, filename):
-        with open(filename, 'a') as file:
-            file.write(str(game) + '\n')
+##############################################################################################################
 
+def trace_game_session(game, filename):
+  with open(filename, 'a') as file:
+    file.write(str(game) + '\n')
 
 ##############################################################################################################
 
