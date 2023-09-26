@@ -12,7 +12,6 @@ import random
 MAX_HEURISTIC_SCORE = 2000000000
 MIN_HEURISTIC_SCORE = -2000000000
 
-
 class UnitType(Enum):
     """Every unit type."""
     AI = 0
@@ -20,7 +19,6 @@ class UnitType(Enum):
     Virus = 2
     Program = 3
     Firewall = 4
-
 
 class Player(Enum):
     """The 2 players."""
@@ -586,6 +584,10 @@ class Game:
             print(f"Broker error: {error}")
         return None
 
+    def trace_game_session(game, filename):
+        with open(filename, 'a') as file:
+            file.write(str(game) + '\n')
+
 
 ##############################################################################################################
 
@@ -621,13 +623,21 @@ def main():
     if args.broker is not None:
         options.broker = args.broker
 
+    trace_game_filename = 'game_log.txt'
+
     # create a new game
     game = Game(options=options)
+
+    # clear the file at the beginning
+    open(trace_game_filename, 'w').close()
 
     # the main game loop
     while True:
         print()
         print(game)
+
+        trace_game_session(game, trace_game_filename)
+
         winner = game.has_winner()
         if winner is not None:
             print(f"{winner.name} wins!")
