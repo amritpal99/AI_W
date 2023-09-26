@@ -325,6 +325,7 @@ class Game:
         unit = self.get(coords.src)
         if unit is None or unit.player != self.next_player:
             return False
+        # TODO : DIAGONAL DIRECTION SHOULD NOT WORK
         unit = self.get(coords.dst)
         return (unit is None)
 
@@ -341,13 +342,40 @@ class Game:
 
         if coords.src == coords.dst:
             # Perform self-destruct
-            self.mod_health(coords.src, -1)
+
+            check_around = src_unit.iter_range(1)
+
+            for coord in check_around:
+                unit = self.get(coord)
+                if unit is not None:
+                    unit.mod_health(coord, -2)
+
+            self.mod_health(coords.src, -9)
+            self.set(coords.src, None)
+
+
         elif dst_unit is not None:
             # Perform attack
-            damage = src_unit.damage_amount(dst_unit)
-            dst_unit.mod_health(-damage)
-            if not dst_unit.is_alive():
-                self.set(coords.dst, None)
+            if dst_unit.player != self.next_player:
+
+                damage = src_unit.damage_amount(dst_unit)
+                dst_unit.mod_health(-damage)
+
+                damage = dst_unit.damage_amount(src_unit)
+                src_unit.mod_health(-damage)
+
+                if not dst_unit.is_alive():
+                    self.set(coords.dst, None)
+                if not src_unit.is_alive():
+                    self.set(coords.src, None)
+            else:
+                # Perform Repair
+                # TODO : C: dT9 dF8 aP7 aF9 aV9 in this situation, aF9 -> aP7 wrong invalid move
+                repair = src_unit.repair_amount(dst_unit)
+                if repair is 0:
+                    return False, "Invalid move: This unit can not heal the targeted unit."
+                dst_unit.mod_health(repair)
+
         else:
             # Regular move
             self.set(coords.dst, src_unit)
