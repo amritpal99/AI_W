@@ -7,14 +7,11 @@ from dataclasses import dataclass, field
 from time import sleep
 from typing import Tuple, TypeVar, Type, Iterable, ClassVar
 import random
-
 import requests
 
 # maximum and minimum values for our heuristic scores (usually represents an end of game condition)
 MAX_HEURISTIC_SCORE = 2000000000
 MIN_HEURISTIC_SCORE = -2000000000
-
-
 class UnitType(Enum):
     """Every unit type."""
     AI = 0
@@ -22,7 +19,6 @@ class UnitType(Enum):
     Virus = 2
     Program = 3
     Firewall = 4
-
 
 class Player(Enum):
     """The 2 players."""
@@ -250,6 +246,8 @@ class Game:
     stats: Stats = field(default_factory=Stats)
     _attacker_has_ai: bool = True
     _defender_has_ai: bool = True
+    src_input: Coord = Coord()
+    dst_input: Coord = Coord()
 
     def __post_init__(self):
         """Automatically called after class init to set up the default board state."""
@@ -423,6 +421,8 @@ class Game:
                 else:
                     output += f"{str(unit):^3} "
             output += "\n"
+        if self.is_finished():
+            output += f"{self.is_finished().name} wins in {self.turns_played} turns"
         return output
 
     def __str__(self) -> str:
@@ -442,6 +442,8 @@ class Game:
             s = input(F'Player {self.next_player.name}, enter your move: ')
             coords = CoordPair.from_string(s)
             if coords is not None and self.is_valid_coord(coords.src) and self.is_valid_coord(coords.dst):
+                self.src_input = coords.src
+                self.dst_input = coords.dst
                 return coords
             else:
                 print('Invalid coordinates! Try again.')
@@ -594,7 +596,6 @@ class Game:
             print(f"Broker error: {error}")
         return None
 
-
 ##############################################################################################################
 
 def trace_game_session(game, filename):
@@ -637,7 +638,7 @@ def main():
     if args.broker is not None:
         options.broker = args.broker
 
-    trace_game_filename = 'game_log.txt'
+    trace_game_filename = 'gameTrace-<b>-<t>-<m>.txt'
 
     # create a new game
     game = Game(options=options)
@@ -654,7 +655,6 @@ def main():
 
         winner = game.has_winner()
         if winner is not None:
-            print(f"{winner.name} wins!")
             break
         if game.options.game_type == GameType.AttackerVsDefender:
             game.human_turn()
