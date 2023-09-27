@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 from time import sleep
 from typing import Tuple, TypeVar, Type, Iterable, ClassVar
 import random
-import requests
+#import requests
 
 # maximum and minimum values for our heuristic scores (usually represents an end of game condition)
 MAX_HEURISTIC_SCORE = 2000000000
@@ -246,8 +246,8 @@ class Game:
     stats: Stats = field(default_factory=Stats)
     _attacker_has_ai: bool = True
     _defender_has_ai: bool = True
-    src_input: Coord = Coord()
-    dst_input: Coord = Coord()
+    src_input: str = ""
+    dst_input: str = ""
 
     def __post_init__(self):
         """Automatically called after class init to set up the default board state."""
@@ -324,22 +324,24 @@ class Game:
             #   Attacker can move up or left
             if unit.player == Player.Attacker:
                 if coords.dst.row is (coords.src.row - 1):
-                    return unit2 is None
+                    return True
                 elif coords.dst.col is (coords.src.col - 1):
-                    return unit2 is None
+                    return True
             else:
                 #   Defender can move down or right
                 if coords.dst.row is (coords.src.row + 1):
-                    return unit2 is None
+                    return True
                 elif coords.dst.col is (coords.src.col + 1):
-                    return unit2 is None
+                    return True
 
         if unit.type is UnitType.Tech or unit.type is UnitType.Virus:
             #     Moves any 4 directions
             valid_coord_list = coords.src.iter_adjacent()
             for coord in valid_coord_list:
                 if coords.dst == coord:
-                    return unit2 is None
+                    return True
+        if coords.src == coords.dst:
+            return True
         return False
 
     def perform_move(self, coords: CoordPair) -> Tuple[bool, str]:
@@ -422,7 +424,7 @@ class Game:
                     output += f"{str(unit):^3} "
             output += "\n"
         if self.is_finished():
-            output += f"{self.is_finished().name} wins in {self.turns_played} turns"
+            output += f"\n{self.has_winner().name} wins in {self.turns_played} turns"
         return output
 
     def __str__(self) -> str:
@@ -442,8 +444,8 @@ class Game:
             s = input(F'Player {self.next_player.name}, enter your move: ')
             coords = CoordPair.from_string(s)
             if coords is not None and self.is_valid_coord(coords.src) and self.is_valid_coord(coords.dst):
-                self.src_input = coords.src
-                self.dst_input = coords.dst
+                self.src_input = coords.src.to_string()
+                self.dst_input = coords.dst.to_string()
                 return coords
             else:
                 print('Invalid coordinates! Try again.')
@@ -603,6 +605,7 @@ def trace_game_session(game, filename):
     if game.src_input and game.dst_input:
         file.write(f"Moved from {game.src_input} to {game.dst_input}\n")
     file.write(str(game) + '\n')
+  file.close()
 
 ##############################################################################################################
 
@@ -638,13 +641,21 @@ def main():
     if args.broker is not None:
         options.broker = args.broker
 
-    trace_game_filename = 'gameTrace-<b>-<t>-<m>.txt'
+    trace_game_filename = ('gameTrace-' + str(options.alpha_beta) + '-' +
+                           str(options.max_time) + '-' + str(options.max_turns) + '.txt')
 
     # create a new game
     game = Game(options=options)
 
     # clear the file at the beginning
     open(trace_game_filename, 'w').close()
+
+    with open(trace_game_filename, 'a') as file:
+        file.write("Time Out: " + str(options.max_time) + "\n")
+        file.write("Max Turns: " + str(options.max_turns) + "\n")
+        file.write("Player AI: " + str(options.alpha_beta) + "\n")
+        file.write("Play Mode: " + str(options.game_type) + "\n\n")
+    file.close()
 
     # the main game loop
     while True:
