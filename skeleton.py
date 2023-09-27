@@ -246,6 +246,8 @@ class Game:
     stats: Stats = field(default_factory=Stats)
     _attacker_has_ai: bool = True
     _defender_has_ai: bool = True
+    src_input: Coord = Coord()
+    dst_input: Coord = Coord()
 
     def __post_init__(self):
         """Automatically called after class init to set up the default board state."""
@@ -425,6 +427,8 @@ class Game:
             s = input(F'Player {self.next_player.name}, enter your move: ')
             coords = CoordPair.from_string(s)
             if coords is not None and self.is_valid_coord(coords.src) and self.is_valid_coord(coords.dst):
+                self.src_input = coords.src
+                self.dst_input = coords.dst
                 return coords
             else:
                 print('Invalid coordinates! Try again.')
@@ -581,6 +585,8 @@ class Game:
 
 def trace_game_session(game, filename):
   with open(filename, 'a') as file:
+    if game.src_input and game.dst_input:
+        file.write(f"Moved from {game.src_input} to {game.dst_input}\n")
     file.write(str(game) + '\n')
 
 ##############################################################################################################
@@ -617,7 +623,7 @@ def main():
     if args.broker is not None:
         options.broker = args.broker
 
-    trace_game_filename = 'game_log.txt'
+    trace_game_filename = 'gameTrace-<b>-<t>-<m>.txt'
 
     # create a new game
     game = Game(options=options)
