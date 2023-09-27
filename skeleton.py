@@ -309,19 +309,17 @@ class Game:
             self.remove_dead(coord)
 
     def is_valid_move(self, coords: CoordPair) -> bool:
-        """Validate a move expressed as a CoordPair. TODO: WRITE MISSING CODE!!!"""
+        """Validate a move expressed as a CoordPair."""
         if not self.is_valid_coord(coords.src) or not self.is_valid_coord(coords.dst):
             return False
+
         unit = self.get(coords.src)
         if unit is None or unit.player != self.next_player:
             return False
-        # TODO : DIAGONAL DIRECTION SHOULD NOT WORK
-        unit2 = self.get(coords.dst)
-        valid_coord_list = coords.src.iter_adjacent()
-        for coord in valid_coord_list:
-            if coords.dst == coord:
-                return True
-        return False
+
+        # Check if the move is valid in terms of adjacency
+        valid_adjacent_coords = list(coords.src.iter_adjacent())
+        return coords.dst in valid_adjacent_coords
 
     def perform_move(self, coords: CoordPair) -> Tuple[bool, str]:
         """Validate and perform a move expressed as a CoordPair."""
@@ -334,41 +332,43 @@ class Game:
         if src_unit.player != self.next_player:
             return False, "Invalid move: It's not your turn."
 
+        # Check if the move is valid in terms of adjacency
+        valid_adjacent_coords = list(coords.src.iter_adjacent())
+        if coords.dst not in valid_adjacent_coords:
+            return False, "Invalid move: The move must be to an adjacent cell."
+
         if coords.src == coords.dst:
-            # Perform self-destruct
-            check_around = coords.src.iter_range(1)
-            for coord in check_around:
-                unit = self.get(coord)
-                if unit is not None:
-                    self.mod_health(coord, -2)
-                    if not unit.is_alive():
-                        self.set(coord, None)
+            # Perform self-destruct for valid adjacent cells only
+            valid_adjacent_coords = list(coords.src.iter_adjacent())
+            if coords.dst in valid_adjacent_coords:
+                for coord in valid_adjacent_coords:
+                    unit = self.get(coord)
+                    if unit is not None:
+                        self.mod_health(coord, -2)
+                        if not unit.is_alive():
+                            self.set(coord, None)
 
-            self.mod_health(coords.src, -9)
-            self.set(coords.src, None)
-
-
-        elif dst_unit is not None:
-            # Perform attack
-            if dst_unit.player != self.next_player:
-
-                damage = src_unit.damage_amount(dst_unit)
-                dst_unit.mod_health(-damage)
-
-                damage = dst_unit.damage_amount(src_unit)
-                src_unit.mod_health(-damage)
-
-                if not dst_unit.is_alive():
-                    self.set(coords.dst, None)
-                if not src_unit.is_alive():
-                    self.set(coords.src, None)
+                self.mod_health(coords.src, -9)
+                self.set(coords.src, None)
             else:
-                # Perform Repair
-                repair = src_unit.repair_amount(dst_unit)
-                if repair is 0:
-                    print("Invalid move: This unit can not heal the targeted unit.")
-                    return False, "Invalid move: This unit can not heal the targeted unit."
-                dst_unit.mod_health(repair)
+                return False, "Invalid move: Self-destruct only allowed for adjacent cells."
+        elif dst_unit is not None:
+            # Check if dst_unit is the same player's unit
+            if dst_unit.player == src_unit.player:
+                return False, "Invalid move: Cannot attack or repair your own unit."
+
+            # Attempt attack
+            damage_to_dst = src_unit.damage_amount(dst_unit)
+            dst_unit.mod_health(-damage_to_dst)
+            if not dst_unit.is_alive():
+                self.set(coords.dst, None)
+
+            # Attempt counterattack from dst_unit
+            damage_to_src = dst_unit.damage_amount(src_unit)
+            src_unit.mod_health(-damage_to_src)
+            if not src_unit.is_alive():
+                self.set(coords.src, None)
+
         else:
             # Regular move
             self.set(coords.dst, src_unit)
@@ -453,7 +453,7 @@ class Game:
                     self.next_turn()
                     break
                 else:
-                    print("The move is not valid! Try again.")
+                    print("That move is not valid at all!, please select nearby cell ")
 
     def computer_turn(self) -> CoordPair | None:
         """Computer plays a move."""
