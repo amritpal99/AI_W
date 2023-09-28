@@ -7,11 +7,14 @@ from dataclasses import dataclass, field
 from time import sleep
 from typing import Tuple, TypeVar, Type, Iterable, ClassVar
 import random
-#import requests
+
+# import requests
 
 # maximum and minimum values for our heuristic scores (usually represents an end of game condition)
 MAX_HEURISTIC_SCORE = 2000000000
 MIN_HEURISTIC_SCORE = -2000000000
+
+
 class UnitType(Enum):
     """Every unit type."""
     AI = 0
@@ -19,6 +22,7 @@ class UnitType(Enum):
     Virus = 2
     Program = 3
     Firewall = 4
+
 
 class Player(Enum):
     """The 2 players."""
@@ -32,11 +36,13 @@ class Player(Enum):
         else:
             return Player.Attacker
 
+
 class GameType(Enum):
     AttackerVsDefender = 0
     AttackerVsComp = 1
     CompVsDefender = 2
     CompVsComp = 3
+
 
 ##############################################################################################################
 
@@ -97,6 +103,7 @@ class Unit:
         if target.health + amount > 9:
             return 9 - target.health
         return amount
+
 
 ##############################################################################################################
 
@@ -159,6 +166,7 @@ class Coord:
         else:
             return None
 
+
 ##############################################################################################################
 
 @dataclass(slots=True)
@@ -211,6 +219,7 @@ class CoordPair:
         else:
             return None
 
+
 ##############################################################################################################
 
 @dataclass(slots=True)
@@ -226,6 +235,7 @@ class Options:
     randomize_moves: bool = True
     broker: str | None = None
 
+
 ##############################################################################################################
 
 @dataclass(slots=True)
@@ -233,6 +243,7 @@ class Stats:
     """Representation of the global game statistics."""
     evaluations_per_depth: dict[int, int] = field(default_factory=dict)
     total_seconds: float = 0.0
+
 
 ##############################################################################################################
 
@@ -311,28 +322,38 @@ class Game:
             self.remove_dead(coord)
 
     def is_valid_move(self, coords: CoordPair) -> bool:
-        """Validate a move expressed as a CoordPair. TODO: WRITE MISSING CODE!!!"""
         if not self.is_valid_coord(coords.src) or not self.is_valid_coord(coords.dst):
             return False
         unit = self.get(coords.src)
-        unit2 = self.get(coords.dst)
+        in_battle = False
 
         if unit is None or unit.player != self.next_player:
             return False
 
         if unit.type is UnitType.AI or UnitType.Firewall or unit.type is UnitType.Program:
-            #   Attacker can move up or left
-            if unit.player == Player.Attacker:
-                if coords.dst.row is (coords.src.row - 1):
-                    return True
-                elif coords.dst.col is (coords.src.col - 1):
-                    return True
-            else:
-                #   Defender can move down or right
-                if coords.dst.row is (coords.src.row + 1):
-                    return True
-                elif coords.dst.col is (coords.src.col + 1):
-                    return True
+            # If it's engaged in battle, it can not escape
+            valid_coord_list = coords.src.iter_adjacent()
+            for coord in valid_coord_list:
+                unit_check = self.get(coord)
+                if unit_check is not None and unit_check.player != self.next_player:
+                    if coord != coords.dst:
+                        in_battle = True
+                    else:
+                        in_battle = False
+                        break
+            if not in_battle:
+                #   Attacker can move up or left
+                if unit.player == Player.Attacker:
+                    if coords.dst.row is (coords.src.row - 1):
+                        return True
+                    elif coords.dst.col is (coords.src.col - 1):
+                        return True
+                else:
+                    #   Defender can move down or right
+                    if coords.dst.row is (coords.src.row + 1):
+                        return True
+                    elif coords.dst.col is (coords.src.col + 1):
+                        return True
 
         if unit.type is UnitType.Tech or unit.type is UnitType.Virus:
             #     Moves any 4 directions
@@ -598,14 +619,16 @@ class Game:
             print(f"Broker error: {error}")
         return None
 
+
 ##############################################################################################################
 
 def trace_game_session(game, filename):
-  with open(filename, 'a') as file:
-    if game.src_input and game.dst_input:
-        file.write(f"Moved from {game.src_input} to {game.dst_input}\n")
-    file.write(str(game) + '\n')
-  file.close()
+    with open(filename, 'a') as file:
+        if game.src_input and game.dst_input:
+            file.write(f"Moved from {game.src_input} to {game.dst_input}\n")
+        file.write(str(game) + '\n')
+    file.close()
+
 
 ##############################################################################################################
 
