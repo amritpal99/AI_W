@@ -7,8 +7,7 @@ from dataclasses import dataclass, field
 from time import sleep
 from typing import Tuple, TypeVar, Type, Iterable, ClassVar
 import random
-
-# import requests
+import requests
 
 # maximum and minimum values for our heuristic scores (usually represents an end of game condition)
 MAX_HEURISTIC_SCORE = 2000000000
@@ -42,8 +41,6 @@ class GameType(Enum):
     AttackerVsComp = 1
     CompVsDefender = 2
     CompVsComp = 3
-
-
 ##############################################################################################################
 
 @dataclass(slots=True)
@@ -103,8 +100,6 @@ class Unit:
         if target.health + amount > 9:
             return 9 - target.health
         return amount
-
-
 ##############################################################################################################
 
 @dataclass(slots=True)
@@ -165,8 +160,6 @@ class Coord:
             return coord
         else:
             return None
-
-
 ##############################################################################################################
 
 @dataclass(slots=True)
@@ -218,8 +211,6 @@ class CoordPair:
             return coords
         else:
             return None
-
-
 ##############################################################################################################
 
 @dataclass(slots=True)
@@ -234,8 +225,7 @@ class Options:
     max_turns: int | None = 100
     randomize_moves: bool = True
     broker: str | None = None
-
-
+    alpha_beta: bool = False
 ##############################################################################################################
 
 @dataclass(slots=True)
@@ -243,8 +233,6 @@ class Stats:
     """Representation of the global game statistics."""
     evaluations_per_depth: dict[int, int] = field(default_factory=dict)
     total_seconds: float = 0.0
-
-
 ##############################################################################################################
 
 @dataclass(slots=True)
@@ -551,14 +539,53 @@ class Game:
         else:
             return (0, None, 0)
 
+    def minimax_alpha_beta(self, depth: int, maximizing_player: bool, alpha: int, beta: int) -> int:
+        if depth == 0 or self.is_finished(): #Add Heuristics
+            #return self.evaluate(Player.Attacker if maximizing_player else Player.Defender)
+            return 1
+
+        if maximizing_player:
+            max_eval = MIN_HEURISTIC_SCORE
+            for move in self.move_candidates():
+                clone = self.clone()
+                clone.perform_move(move)
+                eval = clone.minimax_alpha_beta(depth - 1, False, alpha, beta)
+                max_eval = max(max_eval, eval)
+                alpha = max(alpha, eval)
+                if beta <= alpha:
+                    break
+            return max_eval
+
+        else:
+            min_eval = MAX_HEURISTIC_SCORE
+            for move in self.move_candidates():
+                clone = self.clone()
+                clone.perform_move(move)
+                eval = clone.minimax_alpha_beta(depth - 1, True, alpha, beta)
+                min_eval = min(min_eval, eval)
+                beta = min(beta, eval)
+                if beta <= alpha:
+                    break
+            return min_eval
+
     def suggest_move(self) -> CoordPair | None:
-        """Suggest the next move using minimax alpha beta. TODO: REPLACE RANDOM_MOVE WITH PROPER GAME LOGIC!!!"""
         start_time = datetime.now()
-        (score, move, avg_depth) = self.random_move()
+
+        move = None
+        alpha = MIN_HEURISTIC_SCORE
+        beta = MAX_HEURISTIC_SCORE
+        for each_move in self.move_candidates():
+            clone = self.clone()
+            clone.perform_move(each_move)
+            eval = clone.minimax_alpha_beta(self.options.max_depth, False, alpha, beta)
+            if eval > alpha:
+                alpha = eval
+                move = each_move
+
         elapsed_seconds = (datetime.now() - start_time).total_seconds()
         self.stats.total_seconds += elapsed_seconds
-        print(f"Heuristic score: {score}")
-        print(f"Average recursive depth: {avg_depth:0.1f}")
+        #print(f"Heuristic score: {score}")
+        #print(f"Average recursive depth: {avg_depth:0.1f}")
         print(f"Evals per depth: ", end='')
         for k in sorted(self.stats.evaluations_per_depth.keys()):
             print(f"{k}:{self.stats.evaluations_per_depth[k]} ", end='')
@@ -617,8 +644,6 @@ class Game:
         except Exception as error:
             print(f"Broker error: {error}")
         return None
-
-
 ##############################################################################################################
 
 def trace_game_session(game, filename):
@@ -627,8 +652,6 @@ def trace_game_session(game, filename):
             file.write(f"Moved from {game.src_input} to {game.dst_input}\n")
         file.write(str(game) + '\n')
     file.close()
-
-
 ##############################################################################################################
 
 def main():
@@ -703,8 +726,6 @@ def main():
             else:
                 print("Computer doesn't know what to do!!!")
                 exit(1)
-
-
 ##############################################################################################################
 
 if __name__ == '__main__':
