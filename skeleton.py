@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 from time import sleep
 from typing import Tuple, TypeVar, Type, Iterable, ClassVar
 import random
-import requests
+#import requests
 
 # maximum and minimum values for our heuristic scores (usually represents an end of game condition)
 MAX_HEURISTIC_SCORE = 2000000000
@@ -665,6 +665,11 @@ def main():
     parser.add_argument('--broker', type=str, help='play via a game broker')
     args = parser.parse_args()
 
+    # Add a menu option to choose the game mode
+    if args.game_type not in ["auto", "attacker", "defender", "manual"]:
+        print("Invalid game type. Please use one of the following: auto, attacker, defender, manual")
+        return
+
     # parse the game type
     if args.game_type == "attacker":
         game_type = GameType.AttackerVsComp
@@ -705,6 +710,28 @@ def main():
     # the main game loop
     while True:
         print()
+        print("Choose a game mode:")
+        print("1. Human vs Human")
+        print("2. AI vs Human")
+        print("3. AI vs AI")
+        print("4. Quit")
+
+        choice = input("Enter your choice (1/2/3/4): ")
+
+        if choice == "1":
+            game.options.game_type = GameType.AttackerVsDefender
+        elif choice == "2":
+            game.options.game_type = GameType.AttackerVsComp
+        elif choice == "3":
+            game.options.game_type = GameType.CompVsComp
+        elif choice == "4":
+            print("Quitting the game.")
+            break
+        else:
+            print("Invalid choice. Please select a valid option.")
+            continue
+
+        print()
         print(game)
 
         trace_game_session(game, trace_game_filename)
@@ -726,6 +753,7 @@ def main():
             else:
                 print("Computer doesn't know what to do!!!")
                 exit(1)
+
 ##############################################################################################################
 
 if __name__ == '__main__':
