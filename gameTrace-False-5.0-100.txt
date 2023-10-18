@@ -1,0 +1,15 @@
+Time Out: 5.0
+Max Turns: 100
+Player AI: False
+Play Mode: GameType.AttackerVsDefender
+
+Next player: Attacker
+Turns played: 0
+
+    0   1   2   3   4  
+A: dA9 dT9 dF9  .   .  
+B: dT9 dP9  .   .   .  
+C: dF9  .   .   .  aP9 
+D:  .   .   .  aF9 aV9 
+E:  .   .  aP9 aV9 aA9 
+
