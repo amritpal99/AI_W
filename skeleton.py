@@ -7,7 +7,6 @@ from dataclasses import dataclass, field
 from time import sleep
 from typing import Tuple, TypeVar, Type, Iterable, ClassVar
 import random
-#import requests
 
 # maximum and minimum values for our heuristic scores (usually represents an end of game condition)
 MAX_HEURISTIC_SCORE = 2000000000
@@ -539,10 +538,33 @@ class Game:
         else:
             return (0, None, 0)
 
+    # ... (existing code)
+
+    def e1(game: Game, player: Player) -> int:
+        """Heuristic e1 calculation."""
+        VP = sum(1 for coord, unit in game.player_units(player) if unit.type == UnitType.Virus)
+        TP = sum(1 for coord, unit in game.player_units(player) if unit.type == UnitType.Tech)
+        FP = sum(1 for coord, unit in game.player_units(player) if unit.type == UnitType.Firewall)
+        PP = sum(1 for coord, unit in game.player_units(player) if unit.type == UnitType.Program)
+        AIP = sum(1 for coord, unit in game.player_units(player) if unit.type == UnitType.AI)
+
+        return 3 * (VP + TP + FP + PP) - AIP
+
+    def e2(game: Game, player: Player) -> int:
+        """Heuristic e2 calculation."""
+        VP = sum(1 for coord, unit in game.player_units(player) if unit.type == UnitType.Virus)
+        PP = sum(1 for coord, unit in game.player_units(player) if unit.type == UnitType.Program)
+        AIP = sum(1 for coord, unit in game.player_units(player) if unit.type == UnitType.AI)
+
+        return 4 * (VP + PP) - AIP
+
+    # Modifying  the minimax_alpha_beta function to use the heuristics
     def minimax_alpha_beta(self, depth: int, maximizing_player: bool, alpha: int, beta: int) -> int:
-        if depth == 0 or self.is_finished(): #Add Heuristics
-            #return self.evaluate(Player.Attacker if maximizing_player else Player.Defender)
-            return 1
+        if depth == 0 or self.is_finished():
+            if maximizing_player:
+                return e1(self, Player.Attacker)
+            else:
+                return e1(self, Player.Defender)
 
         if maximizing_player:
             max_eval = MIN_HEURISTIC_SCORE
@@ -568,12 +590,17 @@ class Game:
                     break
             return min_eval
 
+    # ... (existing code)
+
     def suggest_move(self) -> CoordPair | None:
         start_time = datetime.now()
 
         move = None
         alpha = MIN_HEURISTIC_SCORE
         beta = MAX_HEURISTIC_SCORE
+
+        evaluating_heuristic = e1 if self.next_player == Player.Attacker else e2
+
         for each_move in self.move_candidates():
             clone = self.clone()
             clone.perform_move(each_move)
@@ -584,8 +611,6 @@ class Game:
 
         elapsed_seconds = (datetime.now() - start_time).total_seconds()
         self.stats.total_seconds += elapsed_seconds
-        #print(f"Heuristic score: {score}")
-        #print(f"Average recursive depth: {avg_depth:0.1f}")
         print(f"Evals per depth: ", end='')
         for k in sorted(self.stats.evaluations_per_depth.keys()):
             print(f"{k}:{self.stats.evaluations_per_depth[k]} ", end='')
@@ -594,7 +619,10 @@ class Game:
         if self.stats.total_seconds > 0:
             print(f"Eval perf.: {total_evals / self.stats.total_seconds / 1000:0.1f}k/s")
         print(f"Elapsed time: {elapsed_seconds:0.1f}s")
+
         return move
+
+
 
     def post_move_to_broker(self, move: CoordPair):
         """Send a move to the game broker."""
@@ -665,11 +693,6 @@ def main():
     parser.add_argument('--broker', type=str, help='play via a game broker')
     args = parser.parse_args()
 
-    # Add a menu option to choose the game mode
-    if args.game_type not in ["auto", "attacker", "defender", "manual"]:
-        print("Invalid game type. Please use one of the following: auto, attacker, defender, manual")
-        return
-
     # parse the game type
     if args.game_type == "attacker":
         game_type = GameType.AttackerVsComp
@@ -710,28 +733,6 @@ def main():
     # the main game loop
     while True:
         print()
-        print("Choose a game mode:")
-        print("1. Human vs Human")
-        print("2. AI vs Human")
-        print("3. AI vs AI")
-        print("4. Quit")
-
-        choice = input("Enter your choice (1/2/3/4): ")
-
-        if choice == "1":
-            game.options.game_type = GameType.AttackerVsDefender
-        elif choice == "2":
-            game.options.game_type = GameType.AttackerVsComp
-        elif choice == "3":
-            game.options.game_type = GameType.CompVsComp
-        elif choice == "4":
-            print("Quitting the game.")
-            break
-        else:
-            print("Invalid choice. Please select a valid option.")
-            continue
-
-        print()
         print(game)
 
         trace_game_session(game, trace_game_filename)
@@ -753,7 +754,6 @@ def main():
             else:
                 print("Computer doesn't know what to do!!!")
                 exit(1)
-
 ##############################################################################################################
 
 if __name__ == '__main__':
