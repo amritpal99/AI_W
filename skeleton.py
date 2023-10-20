@@ -584,7 +584,7 @@ class Game:
 
     def minimax(self, depth, maximizing_player):
         if depth == 0 or self.is_finished():
-            return self.heuristic(), None
+            return self.heuristic1(), None
 
         if maximizing_player:
             max_eval = MIN_HEURISTIC_SCORE
