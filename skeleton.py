@@ -592,7 +592,7 @@ class Game:
             for move in self.move_candidates():
                 clone_game = self.clone()
                 clone_game.perform_move(move)
-                eval, _ = clone_game.minimax(depth - 1, False)
+                eval, _ = clone_game.minimax(depth - 1, True)
                 if eval > max_eval:
                     max_eval = eval
                     best_move = move
@@ -603,7 +603,7 @@ class Game:
             for move in self.move_candidates():
                 clone_game = self.clone()
                 clone_game.perform_move(move)
-                eval, _ = clone_game.minimax(depth - 1, True)
+                eval, _ = clone_game.minimax(depth - 1, False)
                 if eval < min_eval:
                     min_eval = eval
                     best_move = move
