@@ -608,10 +608,44 @@ class Game:
                     min_eval = eval
                     best_move = move
             return min_eval, best_move
+    
+    def alpha_beta_pruning(self, depth, alpha, beta, maximizing_player):
+        if depth == 0 or self.is_finished():
+            return self.heuristic1(), None
+
+        best_move = None
+
+        if maximizing_player:
+            max_eval = MIN_HEURISTIC_SCORE
+            for move in self.move_candidates():
+                clone_game = self.clone()
+                clone_game.perform_move(move)
+                eval, _ = clone_game.alpha_beta_pruning(depth - 1, alpha, beta, True)
+                if eval > max_eval:
+                    max_eval = eval
+                    best_move = move
+                alpha = max(alpha, eval)
+                if beta <= alpha:
+                    break
+            return max_eval, best_move
+        else:
+            min_eval = MAX_HEURISTIC_SCORE
+            for move in self.move_candidates():
+                clone_game = self.clone()
+                clone_game.perform_move(move)
+                eval, _ = clone_game.alpha_beta_pruning(depth - 1, alpha, beta, False)
+                if eval < min_eval:
+                    min_eval = eval
+                    best_move = move
+                beta = min(beta, eval)
+                if beta <= alpha:
+                    break
+            return min_eval, best_move
 
     def suggest_move(self) -> CoordPair | None:
         start_time = datetime.now()
         (score, move) = self.minimax(self.options.max_depth, True)  # (score, move, avg_depth) = self.random_move()
+        #(score, move) = self.alpha_beta_pruning(self.options.max_depth, MIN_HEURISTIC_SCORE, MAX_HEURISTIC_SCORE, True)
         elapsed_seconds = (datetime.now() - start_time).total_seconds()
         self.stats.total_seconds += elapsed_seconds
         print(f"Heuristic score: {score}")
