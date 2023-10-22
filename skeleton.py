@@ -7,12 +7,11 @@ from dataclasses import dataclass, field
 from time import sleep
 from typing import Tuple, TypeVar, Type, Iterable, ClassVar
 import random
-
+import requests
 
 # maximum and minimum values for our heuristic scores (usually represents an end of game condition)
 MAX_HEURISTIC_SCORE = 2000000000
 MIN_HEURISTIC_SCORE = -2000000000
-
 
 class UnitType(Enum):
     """Every unit type."""
@@ -21,7 +20,6 @@ class UnitType(Enum):
     Virus = 2
     Program = 3
     Firewall = 4
-
 
 class Player(Enum):
     """The 2 players."""
@@ -34,7 +32,6 @@ class Player(Enum):
             return Player.Defender
         else:
             return Player.Attacker
-
 
 class GameType(Enum):
     AttackerVsDefender = 0
@@ -409,7 +406,6 @@ class Game:
         # Invalid move: The move is not valid.
         return False, "Invalid move: The move is not valid."
 
-
     def next_turn(self):
         """Transitions game to the next turn."""
         self.next_player = self.next_player.next()
@@ -589,6 +585,7 @@ class Game:
     def getTimeRunning(self) -> float:
         elapsed_seconds = (datetime.now() - self.start_timer).total_seconds()
         return elapsed_seconds
+
     def minimax(self, depth, maximizing_player, timeout):
         self.startTimer()
 
@@ -601,7 +598,7 @@ class Game:
             for move in self.move_candidates():
                 clone_game = self.clone()
                 clone_game.perform_move(move)
-                eval, _ = clone_game.minimax(depth - 1, True,timeout)
+                eval, _ = clone_game.minimax(depth - 1, True, timeout)
                 if eval > max_eval:
                     max_eval = eval
                     best_move = move
@@ -614,22 +611,23 @@ class Game:
             for move in self.move_candidates():
                 clone_game = self.clone()
                 clone_game.perform_move(move)
-                eval, _ = clone_game.minimax(depth - 1, False,timeout)
+                eval, _ = clone_game.minimax(depth - 1, False, timeout)
                 if eval < min_eval:
                     min_eval = eval
                     best_move = move
                 if self.getTimeRunning() > timeout:
                     break
             return min_eval, best_move
-    
+
     def alpha_beta_pruning(self, depth, alpha, beta, maximizing_player, timeout):
+        self.startTimer()
+
         if depth == 0 or self.is_finished() or self.getTimeRunning() > timeout:
             return self.heuristic1(), None
 
-        best_move = None
-
         if maximizing_player:
             max_eval = MIN_HEURISTIC_SCORE
+            best_move = None
             for move in self.move_candidates():
                 clone_game = self.clone()
                 clone_game.perform_move(move)
@@ -645,10 +643,11 @@ class Game:
             return max_eval, best_move
         else:
             min_eval = MAX_HEURISTIC_SCORE
+            best_move = None
             for move in self.move_candidates():
                 clone_game = self.clone()
                 clone_game.perform_move(move)
-                eval, _ = clone_game.alpha_beta_pruning(depth - 1, alpha, beta, False,timeout)
+                eval, _ = clone_game.alpha_beta_pruning(depth - 1, alpha, beta, False, timeout)
                 if eval < min_eval:
                     min_eval = eval
                     best_move = move
@@ -661,12 +660,16 @@ class Game:
 
     def suggest_move(self) -> CoordPair | None:
         start_time = datetime.now()
-        (score, move) = self.minimax(self.options.max_depth,True, self.options.max_time)  # (score, move, avg_depth) = self.random_move()
-        #(score, move) = self.alpha_beta_pruning(self.options.max_depth, MIN_HEURISTIC_SCORE, MAX_HEURISTIC_SCORE, True,self.options.max_time)
-        elapsed_seconds = self.getTimeRunning() if self.getTimeRunning() < self.options.max_time else  self.options.max_time # (score, move, avg_depth) = self.random_move()
+
+        if self.options.alpha_beta:
+            (score, move) = self.alpha_beta_pruning(self.options.max_depth, MIN_HEURISTIC_SCORE, MAX_HEURISTIC_SCORE,True, self.options.max_time)
+        else:
+            (score, move) = self.minimax(self.options.max_depth, True, self.options.max_time)
+
+        elapsed_seconds = self.getTimeRunning() if self.getTimeRunning() < self.options.max_time else self.options.max_time
+
         self.stats.total_seconds += elapsed_seconds
         print(f"Heuristic score: {score}")
-        # print(f"Average recursive depth: {avg_depth:0.1f}")
         print(f"Evals per depth: ", end='')
         for k in sorted(self.stats.evaluations_per_depth.keys()):
             print(f"{k}:{self.stats.evaluations_per_depth[k]} ", end='')
