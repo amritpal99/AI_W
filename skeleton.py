@@ -361,7 +361,7 @@ class Game:
             return True
         return False
 
-    def perform_move(self, coords: CoordPair) -> Tuple[bool, str]:
+   def perform_move(self, coords: CoordPair) -> Tuple[bool, str]:
         """Validate and perform a move expressed as a CoordPair."""
         if self.is_valid_move(coords):
             src_unit = self.get(coords.src)
@@ -380,14 +380,11 @@ class Game:
                 self.mod_health(coords.src, -9)
                 self.set(coords.src, None)
 
-
             elif dst_unit is not None:
-                # Perform attack
+                # Perform attack or repair
                 if dst_unit.player != self.next_player:
-
                     damage = src_unit.damage_amount(dst_unit)
                     dst_unit.mod_health(-damage)
-
                     damage = dst_unit.damage_amount(src_unit)
                     src_unit.mod_health(-damage)
 
@@ -395,12 +392,12 @@ class Game:
                         self.set(coords.dst, None)
                     if not src_unit.is_alive():
                         self.set(coords.src, None)
-                elif dst_unit.player == src_unit.player:  # else:
+                elif dst_unit.player == src_unit.player:
                     # Perform Repair
                     repair = src_unit.repair_amount(dst_unit)
                     if repair == 0:
-                        print("Invalid move: This unit can not heal the targeted unit.")
-                        return False, "Invalid move: This unit can not heal the targeted unit."
+                        # Invalid move: This unit cannot heal the targeted unit.
+                        return False, "Invalid move: This unit cannot heal the targeted unit."
                     dst_unit.mod_health(repair)
             else:
                 # Regular move
@@ -408,7 +405,10 @@ class Game:
                 self.set(coords.src, None)
 
             return True, "Move successful."
-        return (False, "invalid move")
+
+        # Invalid move: The move is not valid.
+        return False, "Invalid move: The move is not valid."
+
 
     def next_turn(self):
         """Transitions game to the next turn."""
