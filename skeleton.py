@@ -222,6 +222,7 @@ class Options:
     max_turns: int | None = 100
     randomize_moves: bool = True
     broker: str | None = None
+    trace_game_filename = ('gameTrace-' + str(alpha_beta) + '-' + str(max_time) + '-' + str(max_turns) + '.txt')
 ##############################################################################################################
 
 @dataclass(slots=True)
@@ -786,6 +787,7 @@ class Game:
 
         self.stats.total_seconds += elapsed_seconds
         print(f"Heuristic score: {score}")
+        self.ai_data_to_output_file("Heuristic score", score, self.options.trace_game_filename)
         print(f"Evals per depth: ", end='')
         for k in sorted(self.stats.evaluations_per_depth.keys()):
             print(f"{k}:{self.stats.evaluations_per_depth[k]} ", end='')
@@ -793,7 +795,9 @@ class Game:
         total_evals = sum(self.stats.evaluations_per_depth.values())
         if self.stats.total_seconds > 0:
             print(f"Eval perf.: {total_evals / self.stats.total_seconds / 1000:0.1f}k/s")
+            self.ai_data_to_output_file("Eval perf. (k/s)", (total_evals / self.stats.total_seconds), self.options.trace_game_filename)
         print(f"Elapsed time: {elapsed_seconds:0.1f}s")
+        self.ai_data_to_output_file("Elapsed time (s)", elapsed_seconds, self.options.trace_game_filename)
         return move
 
     def post_move_to_broker(self, move: CoordPair):
@@ -844,12 +848,17 @@ class Game:
         except Exception as error:
             print(f"Broker error: {error}")
         return None
+
+    def ai_data_to_output_file(self, data, result, filename):
+        with open(filename, 'a') as file:
+            file.write(str(data) + ": " + str(result) + '\n')
+        file.close()
 ##############################################################################################################
 
 def trace_game_session(game, filename):
     with open(filename, 'a') as file:
         if game.src_input and game.dst_input:
-            file.write(f"Moved from {game.src_input} to {game.dst_input}\n")
+            file.write(f"Human Moved from {game.src_input} to {game.dst_input}\n")
         file.write(str(game) + '\n')
     file.close()
 ##############################################################################################################
@@ -886,16 +895,13 @@ def main():
     if args.broker is not None:
         options.broker = args.broker
 
-    trace_game_filename = ('gameTrace-' + str(options.alpha_beta) + '-' +
-                           str(options.max_time) + '-' + str(options.max_turns) + '.txt')
-
     # create a new game
     game = Game(options=options)
 
     # clear the file at the beginning
-    open(trace_game_filename, 'w').close()
+    open(options.trace_game_filename, 'w').close()
 
-    with open(trace_game_filename, 'a') as file:
+    with open(options.trace_game_filename, 'a') as file:
         file.write("Time Out: " + str(options.max_time) + "\n")
         file.write("Max Turns: " + str(options.max_turns) + "\n")
         file.write("Player AI: " + str(options.alpha_beta) + "\n")
@@ -907,7 +913,7 @@ def main():
         print()
         print(game)
 
-        trace_game_session(game, trace_game_filename)
+        trace_game_session(game, options.trace_game_filename)
 
         winner = game.has_winner()
         if winner is not None:
@@ -923,6 +929,8 @@ def main():
             move = game.computer_turn()
             if move is not None:
                 game.post_move_to_broker(move)
+                with open(options.trace_game_filename, 'a') as file:
+                    file.write("AI Move: " + str(move) + "\n\n")
             else:
                 print("Computer doesn't know what to do!!!")
                 exit(1)
