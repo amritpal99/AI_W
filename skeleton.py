@@ -543,40 +543,156 @@ class Game:
         else:
             return (0, None, 0)
 
-    def heuristic1(self) -> int:
-        """Heuristic1: Prioritize attacking the opponent's units."""
-        score = (
-                3 * sum(1 for (_, unit) in self.player_units(Player.Attacker) if unit.type == UnitType.Virus) +
-                3 * sum(1 for (_, unit) in self.player_units(Player.Attacker) if unit.type == UnitType.Tech) +
-                3 * sum(1 for (_, unit) in self.player_units(Player.Attacker) if unit.type == UnitType.Firewall) +
-                3 * sum(1 for (_, unit) in self.player_units(Player.Attacker) if unit.type == UnitType.Program)
-        )
-        score -= (
-                3 * sum(1 for (_, unit) in self.player_units(Player.Defender) if unit.type == UnitType.Virus) +
-                3 * sum(1 for (_, unit) in self.player_units(Player.Defender) if unit.type == UnitType.Tech) +
-                3 * sum(1 for (_, unit) in self.player_units(Player.Defender) if unit.type == UnitType.Firewall) +
-                3 * sum(1 for (_, unit) in self.player_units(Player.Defender) if unit.type == UnitType.Program)
-        )
-        score -= (9999 * (sum(1 for (_, unit) in self.player_units(Player.Attacker) if unit.type == UnitType.AI) - sum(
-            1 for (_, unit) in self.player_units(Player.Defender) if unit.type == UnitType.AI)))
+    def e0(self) -> int:
+        if self.next_player == Player.Defender:
+            score = (
+                    3 * sum(1 for (_, unit) in self.player_units(Player.Attacker) if unit.type == UnitType.Virus) +
+                    3 * sum(1 for (_, unit) in self.player_units(Player.Attacker) if unit.type == UnitType.Tech) +
+                    3 * sum(1 for (_, unit) in self.player_units(Player.Attacker) if unit.type == UnitType.Firewall) +
+                    3 * sum(1 for (_, unit) in self.player_units(Player.Attacker) if unit.type == UnitType.Program) +
+                    9999 * sum(1 for (_, unit) in self.player_units(Player.Attacker) if unit.type == UnitType.AI))
+
+            score -= (
+                    3 * sum(1 for (_, unit) in self.player_units(Player.Defender) if unit.type == UnitType.Virus) +
+                    3 * sum(1 for (_, unit) in self.player_units(Player.Defender) if unit.type == UnitType.Tech) +
+                    3 * sum(1 for (_, unit) in self.player_units(Player.Defender) if unit.type == UnitType.Firewall) +
+                    3 * sum(1 for (_, unit) in self.player_units(Player.Defender) if unit.type == UnitType.Program) +
+                    9999 * sum(1 for (_, unit) in self.player_units(Player.Defender) if unit.type == UnitType.AI))
+
+        elif self.next_player == Player.Attacker:
+            score = (
+                    3 * sum(1 for (_, unit) in self.player_units(Player.Defender) if unit.type == UnitType.Virus) +
+                    3 * sum(1 for (_, unit) in self.player_units(Player.Defender) if unit.type == UnitType.Tech) +
+                    3 * sum(1 for (_, unit) in self.player_units(Player.Defender) if unit.type == UnitType.Firewall) +
+                    3 * sum(1 for (_, unit) in self.player_units(Player.Defender) if unit.type == UnitType.Program) +
+                    9999 * sum(1 for (_, unit) in self.player_units(Player.Defender) if unit.type == UnitType.AI))
+
+            score -= (
+                    3 * sum(1 for (_, unit) in self.player_units(Player.Attacker) if unit.type == UnitType.Virus) +
+                    3 * sum(1 for (_, unit) in self.player_units(Player.Attacker) if unit.type == UnitType.Tech) +
+                    3 * sum(1 for (_, unit) in self.player_units(Player.Attacker) if unit.type == UnitType.Firewall) +
+                    3 * sum(1 for (_, unit) in self.player_units(Player.Attacker) if unit.type == UnitType.Program) +
+                    9999 * sum(1 for (_, unit) in self.player_units(Player.Attacker) if unit.type == UnitType.AI))
+
+        else:
+            score = MAX_HEURISTIC_SCORE
+
         return score
 
-    def heuristic2(self) -> int:
-        """Heuristic2: Prioritize defense and protecting AI units."""
-        score = (
-                3 * sum(1 for (_, unit) in self.player_units(Player.Attacker) if unit.type == UnitType.Virus) +
-                3 * sum(1 for (_, unit) in self.player_units(Player.Attacker) if unit.type == UnitType.Tech) +
-                3 * sum(1 for (_, unit) in self.player_units(Player.Attacker) if unit.type == UnitType.Firewall) +
-                3 * sum(1 for (_, unit) in self.player_units(Player.Attacker) if unit.type == UnitType.Program)
-        )
-        score -= (
-                3 * sum(1 for (_, unit) in self.player_units(Player.Defender) if unit.type == UnitType.Virus) +
-                3 * sum(1 for (_, unit) in self.player_units(Player.Defender) if unit.type == UnitType.Tech) +
-                3 * sum(1 for (_, unit) in self.player_units(Player.Defender) if unit.type == UnitType.Firewall) +
-                3 * sum(1 for (_, unit) in self.player_units(Player.Defender) if unit.type == UnitType.Program)
-        )
-        score += (9999 * (sum(1 for (_, unit) in self.player_units(Player.Defender) if unit.type == UnitType.AI) - sum(
-            1 for (_, unit) in self.player_units(Player.Attacker) if unit.type == UnitType.AI)))
+    def e1(self) -> int:
+        if self.next_player == Player.Defender:
+            score = (
+                    3 * sum(1 for (_, unit) in self.player_units(Player.Attacker) if unit.type == UnitType.Virus) +
+                    3 * sum(1 for (_, unit) in self.player_units(Player.Attacker) if unit.type == UnitType.Tech) +
+                    3 * sum(1 for (_, unit) in self.player_units(Player.Attacker) if unit.type == UnitType.Firewall) +
+                    3 * sum(1 for (_, unit) in self.player_units(Player.Attacker) if unit.type == UnitType.Program))
+
+            score -= (
+                    3 * sum(1 for (_, unit) in self.player_units(Player.Defender) if unit.type == UnitType.Virus) +
+                    3 * sum(1 for (_, unit) in self.player_units(Player.Defender) if unit.type == UnitType.Tech) +
+                    3 * sum(1 for (_, unit) in self.player_units(Player.Defender) if unit.type == UnitType.Firewall) +
+                    3 * sum(1 for (_, unit) in self.player_units(Player.Defender) if unit.type == UnitType.Program))
+
+            score -= (
+                    9999 * sum(1 for (_, unit) in self.player_units(Player.Attacker) if unit.type == UnitType.AI) -
+                    9999 * sum(1 for (_, unit) in self.player_units(Player.Defender) if unit.type == UnitType.AI))
+
+        elif self.next_player == Player.Attacker:
+            score = (
+                    3 * sum(1 for (_, unit) in self.player_units(Player.Defender) if unit.type == UnitType.Virus) +
+                    3 * sum(1 for (_, unit) in self.player_units(Player.Defender) if unit.type == UnitType.Tech) +
+                    3 * sum(1 for (_, unit) in self.player_units(Player.Defender) if unit.type == UnitType.Firewall) +
+                    3 * sum(1 for (_, unit) in self.player_units(Player.Defender) if unit.type == UnitType.Program))
+
+            score -= (
+                    3 * sum(1 for (_, unit) in self.player_units(Player.Attacker) if unit.type == UnitType.Virus) +
+                    3 * sum(1 for (_, unit) in self.player_units(Player.Attacker) if unit.type == UnitType.Tech) +
+                    3 * sum(1 for (_, unit) in self.player_units(Player.Attacker) if unit.type == UnitType.Firewall) +
+                    3 * sum(1 for (_, unit) in self.player_units(Player.Attacker) if unit.type == UnitType.Program))
+
+            score -= (
+                    9999 * sum(1 for (_, unit) in self.player_units(Player.Defender) if unit.type == UnitType.AI) -
+                    9999 * sum(1 for (_, unit) in self.player_units(Player.Attacker) if unit.type == UnitType.AI))
+
+        else:
+            score = MAX_HEURISTIC_SCORE
+
+        return score
+
+    def e2(self) -> int:
+        if self.next_player == Player.Defender:
+            score = (
+                    3 * sum(1 for (_, unit) in self.player_units(Player.Attacker) if unit.type == UnitType.Virus) +
+                    3 * sum(1 for (_, unit) in self.player_units(Player.Attacker) if unit.type == UnitType.Tech) +
+                    3 * sum(1 for (_, unit) in self.player_units(Player.Attacker) if unit.type == UnitType.Firewall) +
+                    3 * sum(1 for (_, unit) in self.player_units(Player.Attacker) if unit.type == UnitType.Program))
+
+            score -= (
+                    3 * sum(1 for (_, unit) in self.player_units(Player.Defender) if unit.type == UnitType.Virus) +
+                    3 * sum(1 for (_, unit) in self.player_units(Player.Defender) if unit.type == UnitType.Tech) +
+                    3 * sum(1 for (_, unit) in self.player_units(Player.Defender) if unit.type == UnitType.Firewall) +
+                    3 * sum(1 for (_, unit) in self.player_units(Player.Defender) if unit.type == UnitType.Program))
+
+            score += (
+                    9999 * sum(1 for (_, unit) in self.player_units(Player.Attacker) if unit.type == UnitType.AI) -
+                    9999 * sum(1 for (_, unit) in self.player_units(Player.Defender) if unit.type == UnitType.AI))
+
+        elif self.next_player == Player.Attacker:
+            score = (
+                    3 * sum(1 for (_, unit) in self.player_units(Player.Defender) if unit.type == UnitType.Virus) +
+                    3 * sum(1 for (_, unit) in self.player_units(Player.Defender) if unit.type == UnitType.Tech) +
+                    3 * sum(1 for (_, unit) in self.player_units(Player.Defender) if unit.type == UnitType.Firewall) +
+                    3 * sum(1 for (_, unit) in self.player_units(Player.Defender) if unit.type == UnitType.Program))
+
+            score -= (
+                    3 * sum(1 for (_, unit) in self.player_units(Player.Attacker) if unit.type == UnitType.Virus) +
+                    3 * sum(1 for (_, unit) in self.player_units(Player.Attacker) if unit.type == UnitType.Tech) +
+                    3 * sum(1 for (_, unit) in self.player_units(Player.Attacker) if unit.type == UnitType.Firewall) +
+                    3 * sum(1 for (_, unit) in self.player_units(Player.Attacker) if unit.type == UnitType.Program))
+
+            score += (
+                    9999 * sum(1 for (_, unit) in self.player_units(Player.Defender) if unit.type == UnitType.AI) -
+                    9999 * sum(1 for (_, unit) in self.player_units(Player.Attacker) if unit.type == UnitType.AI))
+
+        else:
+            score = MAX_HEURISTIC_SCORE
+
+        return score
+
+    def e3(self) -> int:
+        if self.next_player == Player.Defender:
+            score = (
+                    9999 * sum(1 for (_, unit) in self.player_units(Player.Attacker) if unit.type == UnitType.Virus) +
+                    9999 * sum(1 for (_, unit) in self.player_units(Player.Attacker) if unit.type == UnitType.Tech) +
+                    9999 * sum(1 for (_, unit) in self.player_units(Player.Attacker) if unit.type == UnitType.Firewall) +
+                    9999 * sum(1 for (_, unit) in self.player_units(Player.Attacker) if unit.type == UnitType.Program) +
+                    3 * sum(1 for (_, unit) in self.player_units(Player.Attacker) if unit.type == UnitType.AI))
+
+            score -= (
+                    9999 * sum(1 for (_, unit) in self.player_units(Player.Defender) if unit.type == UnitType.Virus) +
+                    9999 * sum(1 for (_, unit) in self.player_units(Player.Defender) if unit.type == UnitType.Tech) +
+                    9999 * sum(1 for (_, unit) in self.player_units(Player.Defender) if unit.type == UnitType.Firewall) +
+                    9999 * sum(1 for (_, unit) in self.player_units(Player.Defender) if unit.type == UnitType.Program) +
+                    3 * sum(1 for (_, unit) in self.player_units(Player.Defender) if unit.type == UnitType.AI))
+
+        elif self.next_player == Player.Attacker:
+            score = (
+                    9999 * sum(1 for (_, unit) in self.player_units(Player.Defender) if unit.type == UnitType.Virus) +
+                    9999 * sum(1 for (_, unit) in self.player_units(Player.Defender) if unit.type == UnitType.Tech) +
+                    9999 * sum(1 for (_, unit) in self.player_units(Player.Defender) if unit.type == UnitType.Firewall) +
+                    9999 * sum(1 for (_, unit) in self.player_units(Player.Defender) if unit.type == UnitType.Program) +
+                    3 * sum(1 for (_, unit) in self.player_units(Player.Defender) if unit.type == UnitType.AI))
+
+            score -= (
+                    9999 * sum(1 for (_, unit) in self.player_units(Player.Attacker) if unit.type == UnitType.Virus) +
+                    9999 * sum(1 for (_, unit) in self.player_units(Player.Attacker) if unit.type == UnitType.Tech) +
+                    9999 * sum(1 for (_, unit) in self.player_units(Player.Attacker) if unit.type == UnitType.Firewall) +
+                    9999 * sum(1 for (_, unit) in self.player_units(Player.Attacker) if unit.type == UnitType.Program) +
+                    3 * sum(1 for (_, unit) in self.player_units(Player.Attacker) if unit.type == UnitType.AI))
+
+        else:
+            score = MAX_HEURISTIC_SCORE
+
         return score
 
     def startTimer(self):
@@ -590,7 +706,7 @@ class Game:
         self.startTimer()
 
         if depth == 0 or self.is_finished() or self.getTimeRunning() > timeout:
-            return self.heuristic1(), None
+            return self.e0(), None
 
         if maximizing_player:
             max_eval = MIN_HEURISTIC_SCORE
@@ -623,7 +739,7 @@ class Game:
         self.startTimer()
 
         if depth == 0 or self.is_finished() or self.getTimeRunning() > timeout:
-            return self.heuristic1(), None
+            return self.e0(), None
 
         if maximizing_player:
             max_eval = MIN_HEURISTIC_SCORE
